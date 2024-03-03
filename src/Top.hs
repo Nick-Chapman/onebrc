@@ -2,7 +2,7 @@
 module Top (main) where
 
 import Data.List (intercalate)
-import Par4 (Par,parse,terminated,nl,many,lit,digit,sat,alts,int)
+import Par4 (Par,parseFile,terminated,nl,many,lit,digit,sat,alts,int)
 import System.Environment (getArgs)
 import Text.Printf (printf)
 import qualified Data.Map as Map
@@ -11,8 +11,7 @@ main :: IO ()
 main = do
   base <- head <$> getArgs
   let filename = "data/"++base++".txt"
-  s <- readFile filename
-  let entries = parse gram s
+  entries <- parseFile gram filename
   let xs = [ (name,analyze temps) | (name,temps) <- collate entries ]
   putStrLn (prettyPrint xs)
 

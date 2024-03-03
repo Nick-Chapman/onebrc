@@ -1,10 +1,23 @@
 
 -- | 4-value Parser Combinators
-module Par4 (Par,parse,word,key,int,ws0,ws1,sp,nl,lit,sat,char,alts,opt,separated,terminated,many,some,digit,dot,noError) where
+module Par4 (Par,parseFile,word,key,int,ws0,ws1,sp,nl,lit,sat,char,alts,opt,separated,terminated,many,some,digit,dot,noError) where
 
 import Control.Applicative (Alternative,empty,(<|>),many,some)
 import Control.Monad (ap,liftM)
 import qualified Data.Char as Char
+
+import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.Text.IO as Text
+type Input = Text
+inputFile :: FilePath -> IO Text
+inputFile = Text.readFile
+uncons :: Input -> Maybe (Char,Input)
+uncons = Text.uncons
+lengthInput :: Input -> Int
+lengthInput = Text.length
+getAt :: Input -> Int -> Char
+getAt = undefined
 
 instance Functor Par where fmap = liftM
 instance Applicative Par where pure = Ret; (<*>) = ap
@@ -60,44 +73,47 @@ data Par a where
   NoError :: Par a -> Par a
   Alt :: Par a -> Par a -> Par a
 
-type Res a = Either [Char] (a,[Char])
+type Res a = Either Input (a,Input)
 
 -- Four continuations:
 data K4 a b = K4
   { eps :: a -> Res b            -- success; *no* input consumed
-  , succ :: [Char] -> a -> Res b -- success; input consumed
+  , succ :: Input -> a -> Res b -- success; input consumed
   , fail :: () -> Res b          -- failure; *no* input consumed
-  , err :: [Char] -> Res b       -- failure; input consumed (so an error!)
+  , err :: Input -> Res b       -- failure; input consumed (so an error!)
   }
 
-parse :: Par a -> String -> a
-parse parStart chars  = do
+parseFile :: Par a -> FilePath -> IO a
+parseFile par filename = do
+  input <- inputFile filename
+  pure (parseInput par input)
 
-  case (run chars parStart kFinal) of
-    Left remains -> error $ "failed to parse: " ++ report remains
-    Right (a,[]) -> a
-    Right (_,remains) -> error $ "unparsed input from: " ++ report remains
+parseInput :: Par a -> Input -> a
+parseInput parStart input0  = do
 
-  where
-    report :: String -> String
+  let
+    len0 = lengthInput input0
+
+    report :: Input -> String
     report remains = item ++ " at " ++ lc pos
       where
-        item = if pos == length chars then "<EOF>" else show (chars !! pos)
-        pos = length chars - length remains
+        item = if pos == len0 then "<EOF>" else show (input0 `getAt` pos)
+        pos = len0 - lengthInput remains
 
     lc :: Int -> String
     lc p = "line " ++ show line ++ ", column " ++ show col
       where
-        line :: Int = 1 + length [ () | c <- take p chars, c == '\n' ]
-        col :: Int = length (takeWhile (/= '\n') (reverse (take p chars)))
+        (line,col) =  (0::Int,p) -- TODO: fix hack!
+        --line :: Int = 1 + length [ () | c <- take p chars, c == '\n' ]
+        --col :: Int = length (takeWhile (/= '\n') (reverse (take p chars)))
 
-    kFinal = K4 { eps = \a -> Right (a,chars)
+    kFinal = K4 { eps = \a -> Right (a,input0)
                 , succ = \chars a -> Right (a,chars)
-                , fail = \() -> Left chars
+                , fail = \() -> Left input0
                 , err = \chars -> Left chars
                 }
 
-    run :: [Char] -> Par a -> K4 a b -> Res b
+    run :: Input -> Par a -> K4 a b -> Res b
     run chars par k@K4{eps,succ,fail,err} = case par of
 
       Ret x -> eps x
@@ -105,9 +121,9 @@ parse parStart chars  = do
       Fail -> fail ()
 
       Satisfy pred -> do
-        case chars of
-          [] -> fail ()
-          c:chars -> if pred c then succ chars c else fail ()
+        case uncons chars of
+          Nothing -> fail ()
+          Just (c,chars) -> if pred c then succ chars c else fail ()
 
       NoError par -> do
         run chars par K4 { eps = eps
@@ -139,3 +155,10 @@ parse parStart chars  = do
                         , fail
                         , err
                         }
+
+  case (run input0 parStart kFinal) of
+    Left (remains) ->
+      error $ "failed to parse: " ++ report remains
+    Right (a,remains) ->
+      if lengthInput remains == 0 then a else
+        error $ "unparsed input from: " ++ report remains
