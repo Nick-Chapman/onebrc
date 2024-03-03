@@ -14,31 +14,37 @@ main = do
   base <- head <$> getArgs
   let filename = "data/"++base++".txt"
   entries <- parseEntries filename
-  let xs = [ (name,analyze temps) | (name,temps) <- collate entries ]
+  let xs = collate_and_analyze entries
   putStrLn (prettyPrint xs)
+
+collate_and_analyze :: [(Name,Temp)] -> [(Name,Quad)]
+collate_and_analyze entries =
+  [ (name,analyze temps) | (name,temps) <- collate entries ]
 
 collate :: Ord k => [(k,v)] -> [(k,[v])]
 collate xs = Map.toList (Map.fromListWith (++) [ (k,[v]) | (k,v) <- xs ])
 
-analyze :: [Temp] -> Trip
+analyze :: [Temp] -> Quad
 analyze xs =
-  Trip { min = minimum xs
-       , mean = computeMean xs
+  Quad { min = minimum xs
+       , len = length xs
+       , tot = sum xs
        , max = maximum xs
        }
 
-prettyPrint :: [(Name,Trip)] -> String
+prettyPrint :: [(Name,Quad)] -> String
 prettyPrint xs =
   "{" ++ intercalate ", " [ name ++ "=" ++ show trip | (name,trip) <- xs ] ++ "}"
 
 type Name = String
-data Trip = Trip { min :: Temp, mean :: Temp, max :: Temp }
+data Quad = Quad { min :: Temp, tot :: Temp, len :: Int, max :: Temp }
 
-instance Show Trip where
-  show Trip{min,mean,max} =
+instance Show Quad where
+  show Quad{min,tot,len,max} = do
+    let mean :: Temp = round (fromIntegral tot / fromIntegral len :: Float)
     printf "%s/%s/%s" (show min) (show mean) (show max)
 
-data Temp = Tenths Int deriving (Eq,Ord)
+newtype Temp = Tenths Int deriving (Eq,Ord,Num,Integral,Real,Enum)
 
 instance Show Temp where
   show (Tenths x) =
@@ -48,12 +54,6 @@ instance Show Temp where
 
 mkTemp :: Bool -> Int -> Int -> Temp
 mkTemp isNeg w f = Tenths ((if isNeg then negate else id) (10*w+f))
-
-computeMean :: [Temp] -> Temp
-computeMean xs = do
-  let num = sum [ fromIntegral n :: Double | Tenths n <- xs ]
-  let dem = fromIntegral (length xs)
-  Tenths (round (num/dem))
 
 type PR = [(Name,Temp)]
 
