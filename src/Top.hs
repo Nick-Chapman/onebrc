@@ -1,30 +1,21 @@
 
 module Top (main) where
 
+import Data.Char (ord)
 import Data.List (intercalate)
-import Par4 (Par,parseFile,terminated,nl,many,lit,digit,sat,alts,int)
+import Data.Text (Text,uncons)
 import System.Environment (getArgs)
 import Text.Printf (printf)
 import qualified Data.Map as Map
+import qualified Data.Text.IO as Text
 
 main :: IO ()
 main = do
   base <- head <$> getArgs
   let filename = "data/"++base++".txt"
-  entries <- parseFile gram filename
+  entries <- parseEntries filename
   let xs = [ (name,analyze temps) | (name,temps) <- collate entries ]
   putStrLn (prettyPrint xs)
-
-gram :: Par [(Name,Temp)]
-gram = terminated nl line
-  where
-    nameChar = sat (\c -> c /= ';')
-    line = do
-      name <- many nameChar; lit ';'
-      isNeg <- alts [ do lit '-'; pure True, pure False ]
-      whole <- int; lit '.'
-      frac <- digit;
-      pure (name, mkTemp isNeg whole frac)
 
 collate :: Ord k => [(k,v)] -> [(k,[v])]
 collate xs = Map.toList (Map.fromListWith (++) [ (k,[v]) | (k,v) <- xs ])
@@ -63,3 +54,64 @@ computeMean xs = do
   let num = sum [ fromIntegral n :: Double | Tenths n <- xs ]
   let dem = fromIntegral (length xs)
   Tenths (round (num/dem))
+
+type PR = [(Name,Temp)]
+
+parseEntries :: FilePath -> IO PR
+parseEntries fp = do
+  t0 <- Text.readFile fp
+  let
+
+    startLine :: Text -> PR
+    startLine t = do
+      case uncons t of
+        Nothing -> []
+        Just (c,t) ->
+          collectName [c] t
+
+    ord0 = ord '0'
+
+    convDigit :: Char -> Int
+    convDigit c = ord c - ord0
+
+    collectName :: [Char] -> Text -> PR
+    collectName acc t =
+      case uncons t of
+        Nothing -> error "expected first char of name"
+        Just (c,t) -> do
+          case c of
+            ';' -> collectTemp0 (reverse acc) t
+            _ -> collectName (c:acc) t
+
+    collectTemp0 :: Name -> Text -> PR
+    collectTemp0 name t = do
+      case uncons t of
+        Nothing -> error "expected first char of temperature"
+        Just (c,t) ->
+          case c of
+            '-' ->
+              case uncons t of
+                Nothing -> error "expected digit after minus sign"
+                Just (c,t) ->
+                  collectTemp name True (convDigit c) t
+            _ ->
+              collectTemp name False (convDigit c) t
+
+    collectTemp :: Name -> Bool -> Int -> Text -> PR
+    collectTemp name sign n t = do
+      case uncons t of
+        Nothing -> error "expected a decimal point"
+        Just (c,t) -> do
+          case c of
+            '.' ->
+              case uncons t of
+                Nothing -> error "expected digit after decimal point"
+                Just (c,t) -> do
+                  case uncons t of
+                    Nothing -> error "expected newline after final digit"
+                    Just (_newline_,t) -> do
+                      (name, mkTemp sign n (convDigit c)) : startLine t
+            _ ->
+              collectTemp name sign (10 * n + convDigit c) t
+
+  pure (startLine t0)
