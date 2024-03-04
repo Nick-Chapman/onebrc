@@ -1,4 +1,7 @@
 
+t: res/10mil
+	git diff --word-diff=color res/10mil
+
 m: res/million
 	git diff --word-diff=color res/million
 
@@ -6,6 +9,9 @@ k: res/thousand
 	git diff --word-diff=color res/thousand
 
 exe = .stack-work/dist/x86_64-linux/ghc-9.2.7/build/main.exe/main.exe
+
+res/10mil: $(exe) data/10mil.txt Makefile
+	bash -c 'time $(exe) 10mil > $@'
 
 res/million: $(exe) data/million.txt Makefile
 	bash -c 'time $(exe) million > $@'
