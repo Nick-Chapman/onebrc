@@ -6,4 +6,5 @@ stack.yaml.lock
 data
 c/main.exe
 c/main.o
+res
 c/res

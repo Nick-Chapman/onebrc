@@ -1,23 +1,23 @@
 
-t: res/10mil
-	git diff --word-diff=color res/10mil
+k: res/k
+	git diff --no-index --word-diff=color expect/k.res res/k
 
-m: res/million
-	git diff --word-diff=color res/million
+m: res/m
+	git diff --no-index --word-diff=color expect/m.res res/m
 
-k: res/thousand
-	git diff --word-diff=color res/thousand
+t: res/t
+	git diff --no-index --word-diff=color expect/t.res res/t
 
 exe = .stack-work/dist/x86_64-linux/ghc-9.2.7/build/main.exe/main.exe
 
-res/10mil: $(exe) data/10mil.txt Makefile
-	bash -c 'time $(exe) 10mil > $@'
+res/k: $(exe)
+	bash -c 'time $(exe) k > $@'
 
-res/million: $(exe) data/million.txt Makefile
-	bash -c 'time $(exe) million > $@'
+res/m: $(exe)
+	bash -c 'time $(exe) m > $@'
 
-res/thousand: $(exe) data/thousand.txt Makefile
-	bash -c 'time $(exe) thousand > $@'
+res/t: $(exe)
+	bash -c 'time $(exe) t > $@'
 
 $(exe): src/*.hs
 	stack build; touch $(exe)

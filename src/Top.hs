@@ -26,7 +26,9 @@ data Quad = Quad { min :: Temp, tot :: Temp, len :: Int, max :: Temp }
 
 instance Show Quad where
   show Quad{min,tot,len,max} = do
-    let mean :: Temp = round (fromIntegral tot / fromIntegral len :: Float)
+    --let meanA :: Double = fromIntegral tot / fromIntegral len -- you would think
+    let meanA :: Double = fromIntegral tot / 10 / fromIntegral len * 10 -- baseline
+    let mean :: Temp = floor (meanA + 0.5)
     printf "%s/%s/%s" (show min) (show mean) (show max)
 
 newtype Temp = Tenths Int deriving (Eq,Ord,Num,Integral,Real,Enum)
