@@ -4,6 +4,7 @@
 stack.yaml.lock
 .markdown-preview.html
 data
+expect
 c/main.exe
 c/main.o
 res

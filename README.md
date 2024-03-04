@@ -17,3 +17,6 @@ rm res/t ; make t
 ### Latest timings (10mil; approx)
 - haskell: 22s
 - C: 1.8s
+
+### Latest timings (100mil; best)
+- C: 18s
