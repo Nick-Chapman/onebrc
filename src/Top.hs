@@ -14,8 +14,7 @@ main :: IO ()
 main = do
   base <- head <$> getArgs
   let filename = "data/"++base++".txt"
-  entries <- parseEntries filename
-  let xs = collate_and_analyze entries
+  xs <- parseEntries filename
   putStrLn (prettyPrint xs)
 
 prettyPrint :: [(Name,Quad)] -> String
@@ -41,36 +40,36 @@ instance Show Temp where
 mkTemp :: Bool -> Int -> Int -> Temp
 mkTemp isNeg w f = Tenths ((if isNeg then negate else id) (10*w+f))
 
-type PR = [(Name,Temp)]
+type PR = State
 
-parseEntries :: FilePath -> IO PR
+parseEntries :: FilePath -> IO [(Name,Quad)]
 parseEntries fp = do
   t0 <- Text.readFile fp
   let
 
-    startLine :: Text -> PR
-    startLine t = do
+    startLine :: State -> Text -> PR
+    startLine s t = do
       case uncons t of
-        Nothing -> []
+        Nothing -> s
         Just (c,t) ->
-          collectName [c] t
+          collectName s [c] t
 
     ord0 = ord '0'
 
     convDigit :: Char -> Int
     convDigit c = ord c - ord0
 
-    collectName :: [Char] -> Text -> PR
-    collectName acc t =
+    collectName :: State -> [Char] -> Text -> PR
+    collectName s acc t =
       case uncons t of
         Nothing -> error "expected first char of name"
         Just (c,t) -> do
           case c of
-            ';' -> collectTemp0 (reverse acc) t
-            _ -> collectName (c:acc) t
+            ';' -> collectTemp0 s (reverse acc) t
+            _ -> collectName s (c:acc) t
 
-    collectTemp0 :: Name -> Text -> PR
-    collectTemp0 name t = do
+    collectTemp0 :: State -> Name -> Text -> PR
+    collectTemp0 s name t = do
       case uncons t of
         Nothing -> error "expected first char of temperature"
         Just (c,t) ->
@@ -79,12 +78,12 @@ parseEntries fp = do
               case uncons t of
                 Nothing -> error "expected digit after minus sign"
                 Just (c,t) ->
-                  collectTemp name True (convDigit c) t
+                  collectTemp s name True (convDigit c) t
             _ ->
-              collectTemp name False (convDigit c) t
+              collectTemp s name False (convDigit c) t
 
-    collectTemp :: Name -> Bool -> Int -> Text -> PR
-    collectTemp name sign n t = do
+    collectTemp :: State -> Name -> Bool -> Int -> Text -> PR
+    collectTemp s name sign n t = do
       case uncons t of
         Nothing -> error "expected a decimal point"
         Just (c,t) -> do
@@ -96,19 +95,18 @@ parseEntries fp = do
                   case uncons t of
                     Nothing -> error "expected newline after final digit"
                     Just (_newline_,t) -> do
-                      (name, mkTemp sign n (convDigit c)) : startLine t
+                      --(name, mkTemp sign n (convDigit c)) : startLine t
+                      let s' = step s name (mkTemp sign n (convDigit c))
+                      startLine s' t
             _ ->
-              collectTemp name sign (10 * n + convDigit c) t
+              collectTemp s name sign (10 * n + convDigit c) t
 
-  pure (startLine t0)
-
-collate_and_analyze :: [(Name,Temp)] -> [(Name,Quad)]
-collate_and_analyze xs = openState (foldl step state0 xs)
+  pure (openState (startLine state0 t0))
 
 type State = Map Name Quad
 
-step :: State -> (Name,Temp) -> State
-step m (name,temp1) = do
+step :: State -> Name -> Temp -> State
+step m name temp1 = do
   case Map.lookup name m of
     Nothing -> Map.insert name (singleQ temp1) m
     Just temp2 -> Map.insert name (combineQ temp1 temp2) m
