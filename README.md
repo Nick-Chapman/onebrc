@@ -14,6 +14,6 @@ cd c
 rm res/t ; make t
 ```
 
-### Latest timings (approx)
+### Latest timings (10mil; approx)
 - haskell: 22s
-- C: 9s
+- C: 1.8s

@@ -28,10 +28,6 @@ int compare(const void *one, const void *two) {
   return res;
 }
 
-void sortDict() {
-  qsort(dict, nextEntry, sizeof(struct entry), compare);
-}
-
 void printDict() {
   int comma = 0;
   printf("{");
@@ -49,10 +45,30 @@ void printDict() {
   printf("}\n");
 }
 
-int find(char* key) {
-  for (int i = 0; i < nextEntry; i++) {
-    if (0 == strcmp(key,dict[i].name)) {
+int openSpace(char* key) {
+  int x = 0;
+  while ((x < nextEntry) && (strcmp(dict[x].name,key) < 0)) {
+    x++;
+  }
+  for (int i = nextEntry; i >= x; i--) {
+    dict[i+1] = dict[i];
+  }
+  nextEntry++;
+  return x;
+}
+
+int binary_search(char* key) {
+  int lower = 0;
+  int upper = nextEntry-1;
+  while (lower <= upper) {
+    int i = lower + (upper-lower)/2;
+    int comp = strcmp(key,dict[i].name);
+    if (comp == 0) {
       return i;
+    } else if (comp < 0) {
+      upper = i-1;
+    } else {
+      lower = i+1;
     }
   }
   return -1;
@@ -129,19 +145,19 @@ int main(int argc, char* argv[]) {
   for (;;) {
     int done = tokName(f);
     if (done) break;
-    int x = find(buf);
+    int x = binary_search(buf);
     int t = readTemp(f);
     if (x<0) {
       if (nextEntry >= MAX_ENTRIES) {
         printf("**error: too many enties\n");
         exit(1);
       }
-      strcpy (dict[nextEntry].name, buf);
-      dict[nextEntry].count = 1;
-      dict[nextEntry].tot = t;
-      dict[nextEntry].min = t;
-      dict[nextEntry].max = t;
-      nextEntry++;
+      int y = openSpace(buf);
+      strcpy (dict[y].name, buf);
+      dict[y].count = 1;
+      dict[y].tot = t;
+      dict[y].min = t;
+      dict[y].max = t;
     } else {
       dict[x].count ++;
       dict[x].tot += t;
@@ -149,7 +165,6 @@ int main(int argc, char* argv[]) {
       if (t > dict[x].max) dict[x].max = t;
     }
   }
-  sortDict();
   printDict();
   return 0;
 }
