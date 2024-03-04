@@ -1,12 +1,19 @@
 # onebrc
 
-My attempt at the Billion Row Challenge. In Haskell.
+My attempt at the Billion Row Challenge. In Haskell. And C.
 
 ### The original challenge repo
 [The One Billion Row Challenge](https://github.com/gunnarmorling/1brc)
 
-### Build/run
-Let's start with one million...
+Start with one million... Now ten million...
+
+### Build/run/time (10mil)
 ```
-rm res/million ; make
+rm res/t ; make t
+cd c
+rm res/t ; make t
 ```
+
+### Latest timings (approx)
+- haskell: 22s
+- C: 9s
