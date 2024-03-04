@@ -4,3 +4,6 @@
 stack.yaml.lock
 .markdown-preview.html
 data
+c/main.exe
+c/main.o
+c/res
