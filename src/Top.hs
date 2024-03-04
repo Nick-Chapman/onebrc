@@ -6,6 +6,7 @@ import Data.List (intercalate)
 import Data.Text (Text,uncons)
 import System.Environment (getArgs)
 import Text.Printf (printf)
+import Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.Text.IO as Text
 
@@ -16,21 +17,6 @@ main = do
   entries <- parseEntries filename
   let xs = collate_and_analyze entries
   putStrLn (prettyPrint xs)
-
-collate_and_analyze :: [(Name,Temp)] -> [(Name,Quad)]
-collate_and_analyze entries =
-  [ (name,analyze temps) | (name,temps) <- collate entries ]
-
-collate :: Ord k => [(k,v)] -> [(k,[v])]
-collate xs = Map.toList (Map.fromListWith (++) [ (k,[v]) | (k,v) <- xs ])
-
-analyze :: [Temp] -> Quad
-analyze xs =
-  Quad { min = minimum xs
-       , len = length xs
-       , tot = sum xs
-       , max = maximum xs
-       }
 
 prettyPrint :: [(Name,Quad)] -> String
 prettyPrint xs =
@@ -115,3 +101,31 @@ parseEntries fp = do
               collectTemp name sign (10 * n + convDigit c) t
 
   pure (startLine t0)
+
+collate_and_analyze :: [(Name,Temp)] -> [(Name,Quad)]
+collate_and_analyze xs = openState (foldl step state0 xs)
+
+type State = Map Name Quad
+
+step :: State -> (Name,Temp) -> State
+step m (name,temp1) = do
+  case Map.lookup name m of
+    Nothing -> Map.insert name (singleQ temp1) m
+    Just temp2 -> Map.insert name (combineQ temp1 temp2) m
+
+openState :: State -> [(Name,Quad)]
+openState = Map.toList
+
+state0 :: State
+state0 = Map.empty
+
+singleQ :: Temp -> Quad
+singleQ v = Quad { min = v, tot = v, len = 1, max = v }
+
+combineQ :: Temp -> Quad -> Quad
+combineQ v1 Quad{min,tot,len,max} =
+  Quad { min = Prelude.min v1 min
+       , tot = tot + v1
+       , len = len + 1
+       , max = Prelude.max v1 max
+       }
