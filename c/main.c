@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define MAX_NAME_LEN 30
 #define MAX_ENTRIES 500
@@ -37,8 +38,11 @@ void printDict() {
   for (int i = 0; i < nextEntry; i++) {
     double min = (double)(dict[i].min) / 10;
     double max = (double)(dict[i].max) / 10;
-    double mean = ((double)dict[i].tot / 10 / (double)dict[i].count);
-    // bug: prints "-0.0" !
+    //double meanA = ((double)dict[i].tot / (double)dict[i].count); // you would think
+    double meanA = ((double)dict[i].tot / 10 / (double)dict[i].count) * 10; // baseline
+    int mi = floor (meanA+0.5);
+    double mean = (double)mi/10;
+    // bug: can print "-0.0" !
     printf("%s%s=%.1f/%.1f/%.1f", (comma?", ":""), dict[i].name, min, mean, max);
     comma = 1;
   }
@@ -126,7 +130,7 @@ int main(int argc, char* argv[]) {
     int done = tokName(f);
     if (done) break;
     int x = find(buf);
-    int t = readTemp(f); //skipEOL(f);
+    int t = readTemp(f);
     if (x<0) {
       if (nextEntry >= MAX_ENTRIES) {
         printf("**error: too many enties\n");
