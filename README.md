@@ -29,6 +29,7 @@ Comparing my runtimes for the published runtimes of the Java solutions, I estima
 - _Java #2 (artsiomkorzum)_ (no native) 1.5s
 - _Java #4 (serkan-ozal)_ 1.6s
 - _My latest C_ 18s
+- _My latest Ocaml_ 35s
 
 #### 1 billion
 - _Java #1 (thomaswue)_ (no native) 29s

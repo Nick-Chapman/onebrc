@@ -8,6 +8,9 @@ m: res/m
 t: res/t
 	git diff --no-index --word-diff=color ../expect/t.res res/t
 
+h: res/h
+	git diff --no-index --word-diff=color ../expect/h.res res/h
+
 exe = _build/default/bin/main.exe
 
 res/k: $(exe)
@@ -18,3 +21,6 @@ res/m: $(exe)
 
 res/t: $(exe)
 	bash -c 'time $(exe) t > $@'
+
+res/h: $(exe)
+	bash -c 'time $(exe) h > $@'
