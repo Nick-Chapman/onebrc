@@ -2,6 +2,5 @@
 type t
 
 val empty : unit -> t
-val lookup : t -> string -> Quad.t option
-val insert : t -> string -> Quad.t -> t
-val to_sorted_list : t -> (string * Quad.t) list
+val update : string -> int -> t -> t
+val to_sorted_min_mean_max_list : t -> (string * (int * int * int)) list

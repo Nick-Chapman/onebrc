@@ -4,6 +4,17 @@ open Printf
 exception Panic of string
 let panic s = raise (Panic s)
 
+let load filename =
+  let ic = open_in filename in
+  let rec loop acc =
+    match try Some (input_line ic) with End_of_file -> None with
+    | Some line  -> loop (line::acc)
+    | None -> List.rev acc
+  in
+  let res = loop [] in
+  let () = close_in ic in
+  res
+
 let parse : string -> (string*int) =
   fun s ->
   match String.split_on_char ';' s with
@@ -29,11 +40,7 @@ let process lines0 =
     | [] -> dict
     | line::lines ->
        let (name,temp) = parse line in
-       let quad = Quad.single temp in
-       match Dict.lookup dict name with
-       | None -> loop (Dict.insert dict name quad) lines
-       | Some quad1 -> loop (Dict.insert dict name (Quad.combine quad1 quad)) lines
-
+       loop (Dict.update name temp dict) lines
   in
   let dict0 = Dict.empty() in
   loop dict0 lines0
@@ -43,21 +50,20 @@ let show_temp : int -> string = fun i ->
   then sprintf "-%d.%d" ((-i) / 10) ((-i) mod 10)
   else sprintf "%d.%d" (i / 10) (i mod 10)
 
-let show_entry (name,quad) =
-  let (min,mean,max) = Quad.min_mean_max quad in
+let show_entry (name,(min,mean,max)) =
   let z = show_temp in
   sprintf "%s=%s/%s/%s" name (z min) (z mean) (z max)
 
 let report dict =
-  match Dict.to_sorted_list dict with
+  match Dict.to_sorted_min_mean_max_list dict with
   | [] -> panic "report:[]"
-  | x1::xs ->
-     printf "{%s" (show_entry x1);
+  | e1::xs ->
+     printf "{%s" (show_entry e1);
      List.iter (fun e ->  printf ", %s" (show_entry e)) xs;
      printf "}\n"
 
 let run() =
   let arg = Sys.argv.(1) in
-  let lines = File.load (sprintf "../../data/%s.txt" arg) in
+  let lines = load (sprintf "../../data/%s.txt" arg) in
   let dict = process lines in
   report dict
