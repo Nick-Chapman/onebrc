@@ -36,13 +36,13 @@ let process_line line dict =
 
 let process filename =
   let ic = open_in filename in
-  let rec loop n dict =
+  let dict = Dict.empty() in
+  let rec loop() =
     match try Some (input_line ic) with End_of_file -> None with
-    | None -> dict
-    | Some line -> loop (n+1) (process_line line dict)
+    | None -> ()
+    | Some line -> (process_line line dict; loop())
   in
-  let dict0 = Dict.empty() in
-  let dict = loop 0 dict0 in
+  let () = loop() in
   let () = close_in ic in
   dict
 
