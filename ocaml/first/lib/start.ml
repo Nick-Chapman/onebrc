@@ -4,34 +4,45 @@ open Printf
 exception Panic of string
 let panic s = raise (Panic s)
 
-let split2 : char -> string -> (string*string) = fun c s ->
-  match String.split_on_char c s with
-  | [a;b] -> (a,b)
-  | _ -> panic "split2"
+let code0 = Char.code '0'
+
+let process_line line dict =
+  let looking_for_frac acc n =
+    let c = String.get line n in
+    let d = Char.code c - code0 in
+    10 * acc + d
+  in
+  let rec looking_for_whole acc n =
+    let c = String.get line n in
+    if c = '.' then looking_for_frac acc (n+1) else
+      let d = Char.code c - code0 in
+      let acc' = 10 * acc + d in
+      looking_for_whole acc' (n+1)
+  in
+  let looking_for_number n =
+    let c = String.get line n in
+    if c = '-' then - (looking_for_whole 0 (n+1)) else
+      let d = Char.code c - code0 in
+      looking_for_whole d (n+1)
+  in
+  let rec looking_for_name n =
+    let c = String.get line n in
+    if c <> ';' then looking_for_name (n+1) else
+      let name = String.sub line 0 n in
+      let temp = looking_for_number (n+1) in
+      Dict.update name temp dict
+  in
+  looking_for_name 0
 
 let process filename =
   let ic = open_in filename in
-  let rec loop dict =
+  let rec loop n dict =
     match try Some (input_line ic) with End_of_file -> None with
     | None -> dict
-    | Some line ->
-       let name,num = split2 ';' line in
-       let whole,frac = split2 '.' num in
-       let f = int_of_string frac in
-       let mm = String.get whole 0 in
-       if mm = '-'
-       then
-         let whole' = String.sub whole 1 (String.length whole - 1) in
-         let w = int_of_string whole' in
-         let temp = - (10 * w + f) in
-         loop (Dict.update name temp dict)
-       else
-         let w = int_of_string whole in
-         let temp = 10 * w + f in
-         loop (Dict.update name temp dict)
+    | Some line -> loop (n+1) (process_line line dict)
   in
   let dict0 = Dict.empty() in
-  let dict = loop dict0 in
+  let dict = loop 0 dict0 in
   let () = close_in ic in
   dict
 
