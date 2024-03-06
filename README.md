@@ -1,6 +1,6 @@
 # onebrc
 
-My attempts at the Billion Row Challenge. In Haskell. And C.
+My attempts at the Billion Row Challenge. In Haskell, C and Ocaml.
 
 ### The original challenge repo
 [The One Billion Row Challenge](https://github.com/gunnarmorling/1brc)
@@ -21,6 +21,7 @@ Comparing my runtimes for the published runtimes of the Java solutions, I estima
 - _Java #4 (serkan-ozal)_ 0.8
 - _My latest Haskell_ 22s
 - _My latest C_ 1.8s
+- _My latest Ocaml_ 9.7s
 
 #### 100 million
 - _Java baseline_ 32s
