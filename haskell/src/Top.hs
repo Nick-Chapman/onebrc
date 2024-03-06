@@ -13,7 +13,7 @@ import qualified Data.Text.IO as Text
 main :: IO ()
 main = do
   base <- head <$> getArgs
-  let filename = "data/"++base++".txt"
+  let filename = "../data/"++base++".txt"
   xs <- parseEntries filename
   putStrLn (prettyPrint xs)
 
