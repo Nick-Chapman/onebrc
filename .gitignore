@@ -9,3 +9,5 @@ c/main.exe
 c/main.o
 res
 c/res
+ocaml/*/_build
+ocaml/*/*.opam
