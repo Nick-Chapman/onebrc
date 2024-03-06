@@ -65,6 +65,6 @@ let report dict =
 
 let run() =
   let arg = Sys.argv.(1) in
-  let filename = sprintf "../../data/%s.txt" arg in
+  let filename = sprintf "../data/%s.txt" arg in
   let dict = process filename in
   report dict
