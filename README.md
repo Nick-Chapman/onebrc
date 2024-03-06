@@ -21,7 +21,7 @@ Comparing my runtimes for the published runtimes of the Java solutions, I estima
 - _Java #4 (serkan-ozal)_ 0.8
 - _My latest Haskell_ 22s
 - _My latest C_ 1.8s
-- _My latest Ocaml_ 7.8s
+- _My latest Ocaml_ 7.6s
 
 #### 100 million
 - _Java baseline_ 32s
