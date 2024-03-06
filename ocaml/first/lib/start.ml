@@ -4,17 +4,6 @@ open Printf
 exception Panic of string
 let panic s = raise (Panic s)
 
-let load filename =
-  let ic = open_in filename in
-  let rec loop acc =
-    match try Some (input_line ic) with End_of_file -> None with
-    | Some line  -> loop (line::acc)
-    | None -> List.rev acc
-  in
-  let res = loop [] in
-  let () = close_in ic in
-  res
-
 let parse : string -> (string*int) =
   fun s ->
   match String.split_on_char ';' s with
@@ -35,15 +24,19 @@ let parse : string -> (string*int) =
      )
   | _ -> panic "parse:split1"
 
-let process lines0 =
-  let rec loop dict lines = match lines with
-    | [] -> dict
-    | line::lines ->
+let process filename =
+  let ic = open_in filename in
+  let rec loop dict =
+    match try Some (input_line ic) with End_of_file -> None with
+    | None -> dict
+    | Some line ->
        let (name,temp) = parse line in
-       loop (Dict.update name temp dict) lines
+       loop (Dict.update name temp dict)
   in
   let dict0 = Dict.empty() in
-  loop dict0 lines0
+  let dict = loop dict0 in
+  let () = close_in ic in
+  dict
 
 let show_temp : int -> string = fun i ->
   if i < 0
@@ -64,6 +57,6 @@ let report dict =
 
 let run() =
   let arg = Sys.argv.(1) in
-  let lines = load (sprintf "../../data/%s.txt" arg) in
-  let dict = process lines in
+  let filename = sprintf "../../data/%s.txt" arg in
+  let dict = process filename in
   report dict
