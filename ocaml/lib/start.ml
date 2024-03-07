@@ -1,6 +1,9 @@
 
 open Printf
 
+(*module Dict = Dict_built_on_trie*)
+module Dict = Dict_orig
+
 exception Panic of string
 let panic s = raise (Panic s)
 
