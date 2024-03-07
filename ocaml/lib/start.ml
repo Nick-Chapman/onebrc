@@ -6,6 +6,24 @@ let panic s = raise (Panic s)
 
 let code0 = Char.code '0'
 
+type quad = {
+    mutable min : int;
+    mutable max : int;
+    mutable tot : int;
+    mutable count : int
+  }
+
+let update name x t =
+  match Dict.find_opt t name with
+  | None ->
+     let quad = { min = x; max = x; tot = x; count = 1 } in
+     Dict.add t name quad
+  | Some q ->
+     q.min <- min q.min x;
+     q.max <- max q.max x;
+     q.count <- q.count + 1;
+     q.tot <- q.tot + x
+
 let process_line line dict =
   let looking_for_frac acc n =
     let c = String.get line n in
@@ -30,7 +48,7 @@ let process_line line dict =
     if c <> ';' then looking_for_name (n+1) else
       let name = String.sub line 0 n in
       let temp = looking_for_number (n+1) in
-      Dict.update name temp dict
+      update name temp dict
   in
   looking_for_name 0
 
@@ -55,8 +73,18 @@ let show_entry (name,(min,mean,max)) =
   let z = show_temp in
   sprintf "%s=%s/%s/%s" name (z min) (z mean) (z max)
 
+let min_mean_max {min;max;tot;count} =
+  let f = Float.of_int tot /. 10. /. Float.of_int count *. 10. in
+  let mean = Float.to_int (Float.floor (f +. 0.5)) in
+  (min,mean,max)
+
+let to_sorted_min_mean_max_list t =
+  let f (name,quad) = (name,min_mean_max quad) in
+  let cmp (x,_) (y,_) = String.compare x y in
+  List.sort cmp (List.map f (Dict.bindings t))
+
 let report dict =
-  match Dict.to_sorted_min_mean_max_list dict with
+  match to_sorted_min_mean_max_list dict with
   | [] -> panic "report:[]"
   | e1::xs ->
      printf "{%s" (show_entry e1);

@@ -1,6 +1,7 @@
 
-type t
+type 'a t
 
-val empty : unit -> t
-val update : string -> int -> t -> unit
-val to_sorted_min_mean_max_list : t -> (string * (int * int * int)) list
+val empty : unit -> 'a t
+val find_opt : 'a t -> string -> 'a option
+val add : 'a t -> string -> 'a -> unit
+val bindings : 'a t -> (string * 'a) list
