@@ -1,9 +1,6 @@
 
 open Printf
 
-(*module Dict = Dict_built_on_trie*)
-module Dict = Dict_orig
-
 exception Panic of string
 let panic s = raise (Panic s)
 
@@ -31,25 +28,6 @@ let make_get_char ic =
     c
   in
   get_char
-
-let make_get_name get_char =
-  let buf = Buffer.create 80 in
-  let rec line() =
-    let c = get_char() in
-    if c = ';' then () else
-      let () = Buffer.add_char buf c in
-      line()
-  in
-  let get_line () =
-    Buffer.clear buf;
-    match try Some (get_char()) with End_of_file -> None with
-    | None -> None
-    | Some c ->
-       let () = Buffer.add_char buf c in
-       line();
-       Some (Buffer.contents buf)
-  in
-  get_line
 
 let make_get_temp get_char =
   let looking_for_frac acc =
@@ -83,29 +61,46 @@ type quad = {
     mutable count : int
   }
 
-let update name x t =
-  match Dict.find_opt t name with
+let update cursor x =
+  match Trie.get cursor with
   | None ->
      let quad = { min = x; max = x; tot = x; count = 1 } in
-     Dict.add t name quad
+     Trie.set cursor quad
   | Some q ->
      q.min <- min q.min x;
      q.max <- max q.max x;
      q.count <- q.count + 1;
      q.tot <- q.tot + x
 
+
+let make_get_cursor =
+  fun dict get_char ->
+  let root = Trie.root dict in
+  let rec curse_name cur =
+    let c = get_char() in
+    if c = ';' then cur else
+      curse_name (Trie.step cur c)
+  in
+  let get_cursor () =
+    match try Some (get_char()) with End_of_file -> None with
+    | None -> None
+    | Some c -> Some (curse_name (Trie.step root c))
+  in
+  get_cursor
+
+
 let process filename =
   let ic = open_in filename in
   let get_char = make_get_char ic in
-  let get_name = make_get_name get_char in
   let get_temp = make_get_temp get_char in
-  let dict = Dict.empty() in
+  let dict = Trie.empty() in
+  let get_cursor = make_get_cursor dict get_char in
   let rec loop() =
-    match get_name() with
+    match get_cursor() with
     | None -> ()
-    | Some name ->
+    | Some cursor ->
        let temp = get_temp() in
-       update name temp dict;
+       update cursor temp;
        loop()
   in
   let () = loop() in
@@ -129,7 +124,7 @@ let min_mean_max {min;max;tot;count} =
 let to_sorted_min_mean_max_list t =
   let f (name,quad) = (name,min_mean_max quad) in
   let cmp (x,_) (y,_) = String.compare x y in
-  List.sort cmp (List.map f (Dict.bindings t))
+  List.sort cmp (List.map f (Trie.bindings t))
 
 let report dict =
   match to_sorted_min_mean_max_list dict with
