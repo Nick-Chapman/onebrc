@@ -4,7 +4,6 @@ open Printf
 exception Panic of string
 let panic s = raise (Panic s)
 
-let code0 = Char.code '0'
 
 (* This IS better than input_char *)
 let make_get_char ic =
@@ -28,6 +27,35 @@ let make_get_char ic =
     c
   in
   get_char
+
+let with_get_char_of_filename : string -> ((unit -> char) -> 'a) -> 'a =
+  fun filename k ->
+  let ic = open_in filename in
+  let get_char = make_get_char ic in
+  let res = k get_char in
+  close_in ic;
+  res
+
+
+(* Try memory-mapping input file... SLOWER *)
+let _mmSLOW_with_get_char_of_filename : string -> ((unit -> char) -> 'a) -> 'a =
+  fun filename k ->
+  let fd = Unix.openfile filename [] 0 in
+  let a = Unix.map_file fd Bigarray.Char Bigarray.C_layout false [|-1|] in
+  let z = Bigarray.Genarray.size_in_bytes a in
+  let p = ref 0 in
+  let get_char () =
+    let n = !p in
+    if n >= z then raise End_of_file;
+    let c = Bigarray.Genarray.get a [| n |] in
+    incr p;
+    c
+  in
+  let res = k get_char in
+  res
+
+
+let code0 = Char.code '0'
 
 let make_get_temp get_char =
   let looking_for_frac acc =
@@ -90,8 +118,7 @@ let make_get_cursor =
 
 
 let process filename =
-  let ic = open_in filename in
-  let get_char = make_get_char ic in
+  with_get_char_of_filename filename (fun get_char ->
   let get_temp = make_get_temp get_char in
   let dict = Trie.empty() in
   let get_cursor = make_get_cursor dict get_char in
@@ -104,8 +131,7 @@ let process filename =
        loop()
   in
   let () = loop() in
-  let () = close_in ic in
-  dict
+  dict)
 
 let show_temp : int -> string = fun i ->
   if i < 0
