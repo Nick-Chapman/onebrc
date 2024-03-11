@@ -9,6 +9,73 @@ let panic s = raise (Panic s)
 
 let code0 = Char.code '0'
 
+(* This IS better than input_char *)
+let make_get_char ic =
+  let buf_size = 65536 in
+  let buf = Bytes.create buf_size in
+  let p = ref 0 in
+  let max = ref 0 in
+  let refill() =
+    let n = input ic buf 0 buf_size in
+    (*if (n != buf_size) then printf "refill-> %d\n" n;*)
+    if (n = 0) then raise End_of_file;
+    max := n;
+    p := 0;
+    ()
+  in
+  let get_char () =
+    if !p == !max then refill();
+    let c = Bytes.get buf (!p) in
+    incr p;
+    (*let () = printf "v2-inp(%d):%c\n" (!remain) c in*)
+    c
+  in
+  get_char
+
+let make_get_name get_char =
+  let buf = Buffer.create 80 in
+  let rec line() =
+    let c = get_char() in
+    if c = ';' then () else
+      let () = Buffer.add_char buf c in
+      line()
+  in
+  let get_line () =
+    Buffer.clear buf;
+    match try Some (get_char()) with End_of_file -> None with
+    | None -> None
+    | Some c ->
+       let () = Buffer.add_char buf c in
+       line();
+       Some (Buffer.contents buf)
+  in
+  get_line
+
+let make_get_temp get_char =
+  let looking_for_frac acc =
+    let c = get_char() in
+    let d = Char.code c - code0 in
+    10 * acc + d
+  in
+  let rec looking_for_whole acc =
+    let c = get_char() in
+    if c = '.' then looking_for_frac acc else
+      let d = Char.code c - code0 in
+      let acc' = 10 * acc + d in
+      looking_for_whole acc'
+  in
+  let looking_for_number() =
+    let c = get_char() in
+    if c = '-' then - (looking_for_whole 0 ) else
+      let d = Char.code c - code0 in
+      looking_for_whole d
+  in
+  fun () ->
+  let n = looking_for_number() in
+  let _x = get_char() in
+  (*if _x != '\n' then panic "expecting NL";*)
+  n
+
 type quad = {
     mutable min : int;
     mutable max : int;
@@ -27,41 +94,19 @@ let update name x t =
      q.count <- q.count + 1;
      q.tot <- q.tot + x
 
-let process_line line dict =
-  let looking_for_frac acc n =
-    let c = String.get line n in
-    let d = Char.code c - code0 in
-    10 * acc + d
-  in
-  let rec looking_for_whole acc n =
-    let c = String.get line n in
-    if c = '.' then looking_for_frac acc (n+1) else
-      let d = Char.code c - code0 in
-      let acc' = 10 * acc + d in
-      looking_for_whole acc' (n+1)
-  in
-  let looking_for_number n =
-    let c = String.get line n in
-    if c = '-' then - (looking_for_whole 0 (n+1)) else
-      let d = Char.code c - code0 in
-      looking_for_whole d (n+1)
-  in
-  let rec looking_for_name n =
-    let c = String.get line n in
-    if c <> ';' then looking_for_name (n+1) else
-      let name = String.sub line 0 n in
-      let temp = looking_for_number (n+1) in
-      update name temp dict
-  in
-  looking_for_name 0
-
 let process filename =
   let ic = open_in filename in
+  let get_char = make_get_char ic in
+  let get_name = make_get_name get_char in
+  let get_temp = make_get_temp get_char in
   let dict = Dict.empty() in
   let rec loop() =
-    match try Some (input_line ic) with End_of_file -> None with
+    match get_name() with
     | None -> ()
-    | Some line -> (process_line line dict; loop())
+    | Some name ->
+       let temp = get_temp() in
+       update name temp dict;
+       loop()
   in
   let () = loop() in
   let () = close_in ic in
