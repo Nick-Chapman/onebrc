@@ -43,21 +43,21 @@ char read_char(void) {
 
 static char buf[MAX_NAME_LEN];
 
-struct entry {
+typedef struct entry {
   char name[MAX_NAME_LEN];
   int count;
   int tot;
   int min;
   int max;
-};
+} entry_t;
 
 #define MAX_ENTRIES 500
 
-static struct entry dict[MAX_ENTRIES];
+static entry_t dict[MAX_ENTRIES];
 
 static int nextEntry = 0;
 
-void printDict(void) {
+void print_dict(void) {
   int comma = 0;
   printf("{");
   for (int i = 0; i < nextEntry; i++) {
@@ -74,7 +74,7 @@ void printDict(void) {
   printf("}\n");
 }
 
-int openSpace(char* key) {
+entry& insert_dict(char* key) { // openSpace
   if (nextEntry >= MAX_ENTRIES) {
     printf("**error: too many enties\n");
     exit(1);
@@ -87,24 +87,24 @@ int openSpace(char* key) {
     dict[i+1] = dict[i];
   }
   nextEntry++;
-  return x;
+  return dict[x];
 }
 
-int binary_search(char* key) {
+entry* lookup_dict(char* key) { // binary_search
   int lower = 0;
   int upper = nextEntry-1;
   while (lower <= upper) {
     int i = lower + (upper-lower)/2;
     int comp = strcmp(key,dict[i].name);
     if (comp == 0) {
-      return i;
+      return &dict[i];
     } else if (comp < 0) {
       upper = i-1;
     } else {
       lower = i+1;
     }
   }
-  return -1;
+  return 0;
 }
 
 int tokName(void) {
@@ -165,22 +165,23 @@ int main(int argc, char* argv[]) {
   for (;;) {
     int done = tokName();
     if (done) break;
-    int x = binary_search(buf);
+    entry* x = lookup_dict(buf);
     int t = readTemp();
-    if (x<0) {
-      int y = openSpace(buf);
-      strcpy (dict[y].name, buf);
-      dict[y].count = 1;
-      dict[y].tot = t;
-      dict[y].min = t;
-      dict[y].max = t;
+    if (x==0) {
+      entry_t& entry = insert_dict(buf);
+      strcpy (entry.name, buf);
+      entry.count = 1;
+      entry.tot = t;
+      entry.min = t;
+      entry.max = t;
     } else {
-      dict[x].count ++;
-      dict[x].tot += t;
-      if (t < dict[x].min) dict[x].min = t;
-      if (t > dict[x].max) dict[x].max = t;
+      entry_t& entry = *x;
+      entry.count ++;
+      entry.tot += t;
+      if (t < entry.min) entry.min = t;
+      if (t > entry.max) entry.max = t;
     }
   }
-  printDict();
+  print_dict();
   return 0;
 }
