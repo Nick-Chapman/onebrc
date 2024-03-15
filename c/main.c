@@ -3,6 +3,44 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+
+// original non-memory-mapped version...
+/*static FILE* the_file;
+void open_the_file(char* filename) {
+  the_file = fopen(filename,"r");
+  if (!the_file) {
+    printf("**error:fopen failed: %s\n", filename);
+    exit(1);
+  }
+}
+char read_char(void) {
+  return fgetc(the_file);
+}*/
+
+
+// memory mapped files...
+static char* the_contents;
+static unsigned long the_file_size;
+static unsigned long the_pointer;
+unsigned long file_size(int fd) { // inlining makes speed worse. no idea why!
+  struct stat st;
+  fstat(fd,&st);
+  return st.st_size;
+}
+void open_the_file(char* filename) {
+  int fd = open(filename, O_RDWR);
+  the_file_size = file_size(fd);
+  the_contents = (char*)mmap(NULL,the_file_size,PROT_WRITE,MAP_SHARED,fd,0);
+  the_pointer = 0;
+}
+char read_char(void) {
+  if (the_pointer >= the_file_size) return -1;
+  return the_contents[the_pointer++];
+}
+
 
 #define MAX_NAME_LEN 30
 #define MAX_ENTRIES 500
@@ -28,7 +66,7 @@ int compare(const void *one, const void *two) {
   return res;
 }
 
-void printDict() {
+void printDict(void) {
   int comma = 0;
   printf("{");
   for (int i = 0; i < nextEntry; i++) {
@@ -74,10 +112,10 @@ int binary_search(char* key) {
   return -1;
 }
 
-int tokName(FILE* f) {
+int tokName(void) {
   int i = 0;
   for (;;) {
-    char c = fgetc(f);
+    char c = read_char();
     if (c == -1) {
       return 1; //done
     }
@@ -96,27 +134,18 @@ int tokName(FILE* f) {
   return 0;
 }
 
-void skipEOL(FILE* f) {
-  for (;;) {
-    char c = fgetc(f);
-    if (c == '\n') {
-      break;
-    }
-  }
-}
-
-int readTemp(FILE* f) {
+int readTemp(void) {
   int i = 0;
   int sign = 1;
-  char c = fgetc(f);
+  char c = read_char();
   if (c == '-') {
     sign = -1;
-    c = fgetc(f);
+    c = read_char();
   }
   for (;;) {
     if (c == '\n') break;
     if (c == '.') {
-      c = fgetc(f);
+      c = read_char();
       continue;
     }
     if ((c < '0') || (c > '9')) {
@@ -126,7 +155,7 @@ int readTemp(FILE* f) {
     int d = c - '0';
     i *= 10;
     i += d;
-    c = fgetc(f);
+    c = read_char();
   }
   return (sign * i);
 }
@@ -137,16 +166,12 @@ int main(int argc, char* argv[]) {
     exit(1);
   }
   char* filename = argv[1];
-  FILE* f = fopen(filename,"r");
-  if (!f) {
-    printf("**error:fopen failed: %s\n", filename);
-    exit(1);
-  }
+  open_the_file(filename);
   for (;;) {
-    int done = tokName(f);
+    int done = tokName();
     if (done) break;
     int x = binary_search(buf);
-    int t = readTemp(f);
+    int t = readTemp();
     if (x<0) {
       if (nextEntry >= MAX_ENTRIES) {
         printf("**error: too many enties\n");
