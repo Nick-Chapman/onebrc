@@ -26,5 +26,5 @@ res/h: main.exe
 main.exe: main.o Makefile
 	gcc main.o -o main.exe
 
-main.o: main.c Makefile
-	gcc -O3 -Wall -Werror -c main.c -o main.o
+main.o: main.C Makefile
+	gcc -O3 -Wall -Werror -c main.C -o main.o
