@@ -24,7 +24,7 @@ res/h: main.exe
 	bash -c 'time ./main.exe ../data/h.txt > $@'
 
 main.exe: main.o Makefile
-	gcc main.o -o main.exe
+	g++ main.o -o main.exe
 
 main.o: main.C Makefile
 	gcc -O3 -Wall -Werror -c main.C -o main.o
