@@ -56,13 +56,6 @@ static struct entry dict[MAX_ENTRIES];
 
 static int nextEntry = 0;
 
-int compare(const void *one, const void *two) {
-  struct entry *e1 = (struct entry*)one;
-  struct entry *e2 = (struct entry*)two;
-  int res = strcmp(e1->name, e2->name);
-  return res;
-}
-
 void printDict(void) {
   int comma = 0;
   printf("{");
