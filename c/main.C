@@ -44,13 +44,14 @@ char read_char(void) {
 static char buf[MAX_NAME_LEN];
 
 typedef struct entry {
-  char name[MAX_NAME_LEN];
+  //char name[MAX_NAME_LEN];
   int count;
   int tot;
   int min;
   int max;
 } entry_t;
 
+/*
 #define MAX_ENTRIES 500
 
 static entry_t dict[MAX_ENTRIES];
@@ -106,6 +107,53 @@ entry* lookup_dict(char* key) { // binary_search
   }
   return 0;
 }
+*/
+
+
+#include <unordered_map>
+#include <vector>
+#include <algorithm>
+
+static std::unordered_map<std::string,entry_t> the_m;
+
+bool compare(std::pair<std::string, entry_t> one, std::pair<std::string, entry_t> two) {
+  return one.first < two.first;
+}
+
+void print_dict(void) {
+  std::vector<std::pair<std::string, entry_t>> elems(the_m.begin(), the_m.end());
+  std::sort(elems.begin(), elems.end(), compare);
+  int comma = 0;
+  printf("{");
+  for(auto it = elems.begin(); it!=elems.end();it++) {
+    entry_t& entry = it->second;
+    const char* name = it->first.c_str();
+    double min = (double)(entry.min) / 10;
+    double max = (double)(entry.max) / 10;
+    double meanA = ((double)entry.tot / 10 / (double)entry.count) * 10; // baseline
+    int mi = floor (meanA+0.5);
+    double mean = (double)mi/10;
+    printf("%s%s=%.1f/%.1f/%.1f", (comma?", ":""), name, min, mean, max);
+    comma = 1;
+  }
+  printf("}\n");
+}
+
+entry& insert_dict(char* key) {
+  entry_t e = {};
+  the_m[key] = e;
+  return the_m[key];
+}
+
+entry* lookup_dict(char* key) {
+  auto it = the_m.find(key);
+  if (it == the_m.end()) {
+    return 0;
+  }
+  entry_t& entry = it->second;
+  return &entry;
+}
+
 
 int tokName(void) {
   int i = 0;
@@ -165,11 +213,11 @@ int main(int argc, char* argv[]) {
   for (;;) {
     int done = tokName();
     if (done) break;
-    entry* x = lookup_dict(buf);
+    entry_t* x = lookup_dict(buf);
     int t = readTemp();
     if (x==0) {
       entry_t& entry = insert_dict(buf);
-      strcpy (entry.name, buf);
+      //strcpy (entry.name, buf);
       entry.count = 1;
       entry.tot = t;
       entry.min = t;
