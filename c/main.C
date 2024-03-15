@@ -25,14 +25,11 @@ char read_char(void) {
 static char* the_contents;
 static unsigned long the_file_size;
 static unsigned long the_pointer;
-unsigned long file_size(int fd) { // inlining makes speed worse. no idea why!
-  struct stat st;
-  fstat(fd,&st);
-  return st.st_size;
-}
 void open_the_file(char* filename) {
   int fd = open(filename, O_RDWR);
-  the_file_size = file_size(fd);
+  struct stat st;
+  fstat(fd,&st);
+  the_file_size = st.st_size;
   the_contents = (char*)mmap(NULL,the_file_size,PROT_WRITE,MAP_SHARED,fd,0);
   the_pointer = 0;
 }
