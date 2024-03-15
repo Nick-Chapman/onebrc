@@ -40,7 +40,6 @@ char read_char(void) {
 
 
 #define MAX_NAME_LEN 30
-#define MAX_ENTRIES 500
 
 static char buf[MAX_NAME_LEN];
 
@@ -51,6 +50,8 @@ struct entry {
   int min;
   int max;
 };
+
+#define MAX_ENTRIES 500
 
 static struct entry dict[MAX_ENTRIES];
 
@@ -74,6 +75,10 @@ void printDict(void) {
 }
 
 int openSpace(char* key) {
+  if (nextEntry >= MAX_ENTRIES) {
+    printf("**error: too many enties\n");
+    exit(1);
+  }
   int x = 0;
   while ((x < nextEntry) && (strcmp(dict[x].name,key) < 0)) {
     x++;
@@ -163,10 +168,6 @@ int main(int argc, char* argv[]) {
     int x = binary_search(buf);
     int t = readTemp();
     if (x<0) {
-      if (nextEntry >= MAX_ENTRIES) {
-        printf("**error: too many enties\n");
-        exit(1);
-      }
       int y = openSpace(buf);
       strcpy (dict[y].name, buf);
       dict[y].count = 1;
