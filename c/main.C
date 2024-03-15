@@ -78,7 +78,7 @@ int openSpace(char* key) {
   while ((x < nextEntry) && (strcmp(dict[x].name,key) < 0)) {
     x++;
   }
-  for (int i = nextEntry; i >= x; i--) {
+  for (int i = nextEntry-1; i >= x; i--) {
     dict[i+1] = dict[i];
   }
   nextEntry++;
