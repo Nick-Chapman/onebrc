@@ -20,24 +20,24 @@ Comparing my runtimes for the published runtimes of the Java solutions, I estima
 - _Java #2 (artsiomkorzum)_ (no native) 0.6s
 - _Java #4 (serkan-ozal)_ 0.8
 - _My latest Haskell_ 22s
-- _My latest C_ 1.8s
 - _My BEST Ocaml_ 2.3s
 - _My latest Ocaml_ 2.4s
+- _My latest C (mmap, -03)_ 1.16s
 
 #### 100 million
 - _Java baseline_ 32s
 - _Java #1 (thomaswue)_ (no native) 1.6s
 - _Java #2 (artsiomkorzum)_ (no native) 1.5s
 - _Java #4 (serkan-ozal)_ 1.6s
-- _My latest C (mmap)_ 14s
 - _My BEST Ocaml_ 23s
 - _My latest Ocaml_ 24s
+- _My latest C (mmap, -03)_ 11.5s
 
 #### 1 billion
 - _Java #1 (thomaswue)_ (no native) 29s
 - _Java #2 (artsiomkorzum)_ (no native) 28s
 - _Java #4 (serkan-ozal)_ 27s
-- _My latest C_ 194s (3m 14s)
+- _Earlier C_ 194s (3m 14s)
 
 
 #### Build/run/time my C solutions

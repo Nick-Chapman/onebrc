@@ -27,4 +27,4 @@ main.exe: main.o Makefile
 	gcc main.o -o main.exe
 
 main.o: main.c Makefile
-	gcc -O1 -Wall -Werror -c main.c -o main.o
+	gcc -O3 -Wall -Werror -c main.c -o main.o
